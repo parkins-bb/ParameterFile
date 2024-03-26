@@ -1,0 +1,18 @@
+Person:
+    name:
+        - John Doe
+        - Jack Stone
+        - Arial Kubber
+    age:
+        age1: 10
+        age2: 20
+        age3: 30
+    gender:
+        - male
+        - female
+        - unknown
+    is_student:
+        - true
+        - false
+        - true
+

@@ -1,0 +1,10 @@
+employee:
+  id: 1
+  name: "John Doe"
+  skills:
+    - Python
+    - C++
+  project:
+    name: "Project Alpha"
+    deadline: "2023-12-31"
+

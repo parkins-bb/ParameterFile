@@ -1,0 +1,23 @@
+
+employees:
+  - id: 1
+    name: John Doe
+    role: Developer
+    skills:
+      - Python
+      - C++
+      - SQL
+  - id: 2
+    name: Jane Smith
+    role: Designer
+    skills:
+      - Photoshop
+      - Illustrator
+projects:
+  alpha:
+    lead: John Doe
+    deadline: 2021-12-31
+  beta:
+    lead: Jane Smith
+    deadline: 2022-06-30
+

@@ -1,0 +1,30 @@
+key:
+    key1: 1
+    key2: 2
+    key3: 3
+
+companies:
+    - 
+        id: 1
+        name: company1 
+        price: 200W 
+    - 
+        id: 2 
+        name: company2 
+        price: 500W 
+
+languages: 
+    - Ruby
+    - Perl
+    - Python
+
+websites: 
+    YAML: yaml.org
+    Ruby: ruby-lang.org
+    Python: python.org
+    Perl: use.perl.org
+
+date:
+    - 2018-02-17
+
+
