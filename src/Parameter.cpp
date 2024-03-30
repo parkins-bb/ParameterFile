@@ -92,6 +92,120 @@ std::vector<std::string> Parameter::getYamlNodes() {
 }
 
 
+
+/** 成员函数（新增1）： 
+ * @brief 给出节点的路径，查找对应的节点的值，并且这个值是一个标量。
+ * @param 传入节点搜索路径（用一个点分隔）；引用参数存储找到的这个值
+ * @return 如果值为标量，返回“true”来表示成功；值不是标量或没有找到值，函数返回“false”
+ */
+bool Parameter::getValueByPath(const std::string& path, std::string& outputValue) const{
+	std::istringstream iss(path);   // 节点的路径
+	std::string segment;  // 路径的一部分，比如aaa.bbb.ccc[2], 取由‘.’分隔的那部分
+	const YAML::Node* current = &root;  // 指向当前操作节点的值镇，初始化为指向根节点
+
+	// 按照‘.’分割路径字符串，每次循环处理路径的一部分
+	while (std::getline(iss, segment, '.')){
+		// 检查路径的当前部分是否表示为一个序列的索引（例如“employee[0]”）
+		// 如果是，解析出键名和索引，然后尝试访问对应的节点
+		if (segment.find('[') != std::string::npos && segment.find(']') != std::string::npos){
+			std::string key = segment.substr(0, segment.find('['));
+			int index = std::stoi(segment.substr(segment.find('[') + 1, segment.find(']') - segment.find('[') - 1));
+			if (!current->operator[](key)[index]){
+				return false;  // 未找到对应的值或者为空
+			}
+			current = &current->operator[](key)[index];
+		}else{
+			if(!current->opeator[](segment)){
+				return false;   // 未找到对应的值或者为空
+			}
+			current = &current->operator[](segment);
+		}
+	}
+	
+	// 检查最终的节点是不是一个标量，如果是，存储在outputValue中
+	if (current->IsScalar()) {
+		outputValue = current->as<std::string>();
+		return true;
+	}else{
+		// 如果结果不是标量
+		return false;
+	}
+}
+
+
+/** 成员函数（新增2）：
+@brief 传入节点的路径，查找对应节点下一级的所有子节点，子节点可以是标量，映射和序列
+@param 参数1: 节点的路径，用'.'和[]表示，参数2:引用参数，存储所有找到的子节点
+@return 如果有子节点，则返回为true; 如果无子节点或路径无效，返回为false 
+*/
+bool Parameter::getChildrenByPath(const std::string& path, std::vector<std::string>& children) const {
+	const YAML::Node* node = getNodeByPath(path);
+	if (!node) {
+		return false;  // 路径无效
+	}
+
+	if (node->IsScalar()){
+		// 如果子节点是标量，直接将其值添加到children中
+		children.push_back(node->as<std::string>());
+	}else if (node->IsSequence()) {
+		// 如果子节点是序列，将每个元素的索引添加到children中
+		for (size_t i = 0; i < node->size(); i++){
+			children.push_back(std::to_string);  // 将索引转换为字符串
+		}
+	} else if (node->IsMap()) {
+		// 如果节点是映射，将每个键的名称添加到children中
+		for (YAML::const_iterator it = node->begin(); it != node->end(); it++){
+			children.push_back(it->first.as<std::string>());
+		}
+	}
+	
+	return true;
+}
+
+/**
+@brief 私有成员函数，用于查找子节点
+*/
+const YAML::Node* Parameter::getNodeByPath(const std::string& path) const {
+	std::istringstream iss(path);
+	std::string segment;
+	const YAML::Node* current = &root;
+
+	while (std::getline(iss, segment, '.')) {
+		if (segment.find('[') != std::string::npos && segment.find(']') != std::string::npos) {
+			std::string key = segment.substr(0, segment.find('['));
+			int index = std::stoi(segment.substr(segment.find('[') + 1, segment.find(']') - segment.find('[') - 1));
+			current = &(*current)[key][index];
+		} else {
+			current = &(*current)[segment];
+		}
+		if (!current) {
+			return nullptr;
+		}
+	}
+	return current;
+}
+
+
+/**
+@brief 打印下一级所有子节点的函数
+@param 输入节点路径
+@return 如果节点路径有效或children不为空，返回true
+*/
+bool Parameter::printChildrenByPath(const std::string& path) const {
+	std::vector<std::string> children;
+    if (getChildrenByPath(path, children)) {
+        std::cout << "Children of '" << path << "':" << std::endl;
+        for (const auto& child : children) {
+            std::cout << "- " << child << std::endl;
+        }
+        return true;
+    } else {
+        std::cout << "No children found or path is invalid for '" << path << "'." << std::endl;
+        return false;
+    }
+}
+
+
 // 成员函数5: 通过路径找到节点，打印当前节点的类型，输出父节点、子节点
 Parameter::NodeInfo Parameter::GetNodeInfoByPath(const std::string& internalPath){
 	// 分解internalPath为节点路径数组。将路径用“.”分隔开来
@@ -110,7 +224,7 @@ Parameter::NodeInfo Parameter::GetNodeInfoByPath(const std::string& internalPath
 		return ExtractNodeInfo(targetNode);
 	} else {
 		std::cerr << "Node not found for path: " << internalPath << std::endl;
-		return NodeInfo{"Invalid", std::nullopt, {}};
+		return NodeInfo{"Invalid", boost::none, {}};
 	}
 }
 
@@ -130,7 +244,7 @@ std::vector<std::string> Parameter::GetNodePathByValue(const std::string& target
 
 
 // 成员函数7: 此函数为了实现功能：给出一个yaml节点的键名，
-// 1. 输出这个建的路径；
+// 1. 输出这个键的路径；
 // 2. 输出这个键所对应的值，如果节点的值对应是序列的话，也全部输出
 // 功能：打印节点值，如果节点是序列，则遍历序列元素
 // 修改后的成员函数，返回查找结果
@@ -312,7 +426,7 @@ Parameter::NodeInfo Parameter::ExtractNodeInfo(const YAML::Node& node) {
 	info.nodeType = NodeTypeToString(node.Type());
 
 	// 假设父节点信息在此上下文中不可获取，初始化为nullopt
-	info.parentNode = std::nullopt;
+	info.parentNode = boost:none;
 
 	// 提取子节点信息
 	if (node.IsMap()) {

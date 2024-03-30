@@ -1,4 +1,0 @@
-/home/zhaixiuxi/workspace/HSF_docker_design/my_docker_tst/build/CMakeFiles/parameter_lib.dir
-/home/zhaixiuxi/workspace/HSF_docker_design/my_docker_tst/build/CMakeFiles/example_bin.dir
-/home/zhaixiuxi/workspace/HSF_docker_design/my_docker_tst/build/CMakeFiles/edit_cache.dir
-/home/zhaixiuxi/workspace/HSF_docker_design/my_docker_tst/build/CMakeFiles/rebuild_cache.dir

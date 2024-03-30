@@ -2,9 +2,14 @@ cmake_minimum_required(VERSION 3.18)
 project(my_parameter)
 
 # 设置C++标准
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# 指定Boost的根目录
+set(BOOST_ROOT $(CMAKE_CURRENT_SOURCE_DIR))
+# Boost库是静态链接的
+set(Boost_USE_STATIC_LIBS ON)
 
 # 包含头文件目录
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16,7 +21,7 @@ add_library(yaml-cpp STATIC IMPORTED)
 set_property(TARGET yaml-cpp PROPERTY IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/lib/libyaml-cpp.a")
 
 # 查找并添加Boost库
-find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(Boost REQUIRED COMPONENTS filesystem system)
 if(Boost_FOUND)
 	# 包含Boost库头文件目录
 	include_directories(${Boost_INCLUDE_DIRS})

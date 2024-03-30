@@ -5,13 +5,15 @@
 #include <iostream>
 #include <filesystem>
 #include <vector>
-#include <fstream>
+// #include <fstream>  C++17特性
 #include <unordered_map>
 #include <sstream>
-#include <optional>
+// #include <optional> C++17特性
+#include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 #include "yaml-cpp/yaml.h"
 
-namespace fs = std::filesystem;
+namespace fs = boost::filesystem;
 
 class Parameter {
 public:
@@ -29,17 +31,38 @@ public:
 
 	// 成员函数4：用于获取并返回yaml文件所有的节点内容
     std::vector<std::string> getYamlNodes();
+
+	/** 成员函数（新增1）： 
+	 * @brief 给出路径，返回对应的节点（节点可以是标量，键值对或者序列）
+	 * @param
+	 * @return 
+	 */
+	YAML::Node getValueByPath(const std::string& path);
+
+
+
+
+
+
+
+	
 	
 	// 结构体定义，用于返回节点信息，包括节点类型、父节点、子节点
     struct NodeInfo {
         std::string nodeType;
-        std::optional<std::string> parentNode;   // 使用 std::optional，因为可能没有父节点
+        boost::optional<std::string> parentNode;   // 使用 boost::optional，因为可能没有父节点
         std::vector<std::string> childNodes;
     };
 
 	// 成员函数5: 通过路径找到节点，返回当前节点的类型，父节点、子节点
 	// 通过路径搜查的好处是防止搜索到同名节点，保证搜索的准确性，本方法不使用模糊搜索
     NodeInfo GetNodeInfoByPath(const std::string& internalPath);
+
+	/**
+	 * @brief : 通过路径
+	 * @param : 
+	 * @return : 
+	 */
 
 	// 成员函数6：给定目标值，返回该值在YAML结构中的路径
     std::vector<std::string> GetNodePathByValue(const std::string& targetValue);
@@ -55,6 +78,15 @@ public:
 	// (2). 输出这个键所对应的值，如果节点的值对应是序列的话，也全部输出
 	// 功能：返回节点值，节点路径，如果节点是序列，则遍历序列元素
     FindResult FindAndPrintByKey(const std::string& targetKey);
+
+
+	// 成员函数（新增1）: 给定节点的名称，返回其父节点
+	
+
+	// 成员函数（新增2）: 给定节点的名称，返回其子节点
+
+	// 成员函数（新增3）：给定节点的名称，返回节点类型
+
 
 	// 成员函数8:
 	// 本函数为了实现如下功能：给出节点的具体路径，增加这个路径下的节点, 需要调用成员函数9保存至新文件
@@ -120,6 +152,8 @@ private:
     std::unordered_map<std::string, YAML::Node> configs;
 	// 成员变量3 保存当前操作的文件名
     std::string currentYamlFilename;
+	// 成员变量4 文件的根节点
+	YAML::Node root;
 
 };
 
