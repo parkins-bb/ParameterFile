@@ -187,7 +187,7 @@ const YAML::Node* Parameter::getNodeByPath(const std::string& path) const {
 
 
 /**
-@brief 打印下一级所有子节点的函数
+@brief 输入节点路径，打印下一级所有子节点
 @param 输入节点路径
 @return 如果节点路径有效或children不为空，返回true
 */
@@ -206,55 +206,178 @@ bool Parameter::printChildrenByPath(const std::string& path) const {
 }
 
 
-// 成员函数5: 通过路径找到节点，打印当前节点的类型，输出父节点、子节点
-Parameter::NodeInfo Parameter::GetNodeInfoByPath(const std::string& internalPath){
-	// 分解internalPath为节点路径数组。将路径用“.”分隔开来
-	std::vector<std::string> path;
-	std::istringstream iss(internalPath);
-	std::string item;
-	while (std::getline(iss, item, '.')){
-		path.push_back(item);
+/**
+@brief 给定节点路径，查询所有子节点的类型。
+@param 参数1: 节点路径; 参数2: 容器，存储子节点类型
+@return 如果路径存在，则返回true
+*/
+bool Parameter::getNodeTypesAtPath(const std::string& path, std::vector<std::string>& nodeTypes) const {
+    const YAML::Node* node = getNodeByPath(path);
+    if (!node || !node->IsDefined()) {
+        return false; // 路径不存在或节点未定义
+    }
+        
+    if (node->IsMap()) {
+        for (auto it = node->begin(); it != node->end(); ++it) {
+            nodeTypes.push_back("Map");
+        }
+    } else if (node->IsSequence()) {
+        for (size_t i = 0; i < node->size(); ++i) {
+            nodeTypes.push_back("Sequence");
+        }
+    } else if (node->IsScalar()) {
+        nodeTypes.push_back("Scalar");
+    }
+
+    return true;
+}
+
+
+/**
+@brief 打印所有子节点类型
+@param 参数: 节点路径
+*/
+void Parameter::printNodeTypesAtPath(const std::string& path) const {
+    std::vector<std::string> nodeTypes;
+    if (getNodeTypesAtPath(path, nodeTypes)) {
+        std::cout << "Node types at '" << path << "':" << std::endl;
+        for (const auto& type : nodeTypes) {
+            std::cout << "- " << type << std::endl;
+        }
+    } else {
+        std::cout << "Path '" << path << "' not found or has no children." << std::endl;
+    }
+}
+
+
+/**
+@brief 给定节点内容，搜索节点的路径。特点是可以从自定义的任一节点开始查找
+@param 参数1：节点内容, 可能是标量、映射的值、序列的一个元素；参数2：引用参数，用于存储节点路径
+@return 如果节点的值存在，返回为true
+@note 可以设定从任一节点开始查找，这么做的好处是：1.可以提高查找效率；2. 可以提高查找准确性
+*/
+bool Parameter::findPathByValue(const YAML::Node& node, const std::string& valueToFind, std::string& path) const {
+	if (!node.IsDefined()) {
+		return false; // 节点未定义
 	}
 
-	// 找到指定路径的节点
-	YAML::Node targetNode = FindNodeByPath(configs[currentYamlFilename], path);
+	if (node.IsScalar() && node.as<std::string>() == valueToFind) {
+		return true;  // 找到匹配的标量值
+	} else if (node.IsSequence()) {
+		for (size_t i = 0; i < node.size(); i++){
+			std::string currentPath = path + "[" + std::to_string(i) + "]";
+			if (findPathByValue(node[i], valueToFind, currentPath)){
+				path = currentPath;
+				return true;   // 找到匹配的序列元素
+			}
+		}
+	} else if (node.IsMap()) {
+		for (YAML::const_iterator it = node.begin(); it != node.end(); it++){
+			std::string currentPath = path.empty() ? it->first.as<std::string>()
+			if (findPathByValue(it->second, valueToFind, currentPath)) {
+				path = currentPath;
+				return true;   // 找到匹配的映射值
+			}
+		}
+	}
+	
+	return false;   // 未找到匹配的值
+}
 
-	// 如果节点有效，获取节点信息
-	if (targetNode){
-		return ExtractNodeInfo(targetNode);
+
+/**
+@brief 从根节点开始查找所有的路径，如果存在，则存储至引用参数容器path中。
+@param 参数1：要查找的值；参数2：形式参数，容器，存储路径
+@return 如果要查找的值存在，返回为true
+@note 要注意本函数是用来查询: "标量、序列中的元素、键值对的值" 对应的路径，不是用来查询键名对应的路径!!!
+*/
+bool Parameter::findPathByValueInRoot(const std::string& valueToFind, std::string& path) const{
+	return findPathByValue(root, valueToFind, path);
+}
+
+
+/**
+@brief 给定节点内容，打印所有的路径。
+@param 输入要查找的节点的内容（注意是: "标量、序列中的元素、键值对的值"）
+*/
+void Parameter::printAllPathsByValue(const std::string& valueToFind) const {
+	std::vector<std::string> paths;
+	if (findAllPathsByValueInRoot(valueToFind, paths)) {
+		std::cout << "Found paths for value '" << valueToFind << "':" << std::endl;
+		for (const auto& path : paths) {
+			std::cout << "- " << path << std::endl;
+		}
 	} else {
-		std::cerr << "Node not found for path: " << internalPath << std::endl;
-		return NodeInfo{"Invalid", boost::none, {}};
+		std::cout << "Value '" << valueToFind << "' not found." << std::endl;
 	}
 }
 
 
-// 成员函数6：给定目标值，返回该值在YAML结构中的路径
-std::vector<std::string> Parameter::GetNodePathByValue(const std::string& targetValue) {
-	std::vector<std::string> path;
-	YAML::Node target = YAML::Load(targetValue); // 从字符串创建YAML节点
-	// 使用FindNodePath进行搜索
-	if (!FindNodePath(configs[currentYamlFilename], target, path) || path.empty()) {
-		// 如果没找到，可以选择返回一个包含特定消息的问题
-		return {"Node not found. "};
-	}
-
-	return path; // 返回构建的路径信息或未找到的信息
+/**
+@brief 根据键名查找这个键名对应的路径，并存储至引用参数中
+@param 参数1 node:当前递归遍历到的节点，参数2 keyToFind:要找到的键名,
+	   参数3 paths:用于存储找到的路径，参数4 当前路径（用于递归过程中的累积构建）
+@return 如果找得到，返回为true
+@note 较少使用这个函数
+      注意YAML文件可能包含多个同名的键名, 所以本成员函数可以查找同名键名可能的所有路径
+*/
+bool Parameter::findAllPathsByKey(const YAML::Node& node, const std::string& keyToFind, std::vector<std::string>& paths, const std::string& currentPath = "") const {
+    bool found = false;
+    if (!node.IsDefined()) {
+        return false;
+    }
+        
+    if (node.IsMap()) {
+        for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
+            std::string newKey = it->first.as<std::string>();
+            std::string newPath = currentPath.empty() ? newKey : currentPath + "." + newKey;
+            if (newKey == keyToFind) {
+                paths.push_back(newPath);
+                found = true;
+            }
+            // 继续递归搜索
+            if (findAllPathsByKey(it->second, keyToFind, paths, newPath)) {
+                found = true;
+            }
+        }
+    } else if (node.IsSequence()) {
+        for (size_t i = 0; i < node.size(); ++i) {
+            std::string newPath = currentPath + "[" + std::to_string(i) + "]";
+            // 对序列中的每个元素，继续递归搜索
+            if (findAllPathsByKey(node[i], keyToFind, paths, newPath)) {
+                found = true;
+            }
+        }
+    }
+    return found;
 }
 
 
-// 成员函数7: 此函数为了实现功能：给出一个yaml节点的键名，
-// 1. 输出这个键的路径；
-// 2. 输出这个键所对应的值，如果节点的值对应是序列的话，也全部输出
-// 功能：打印节点值，如果节点是序列，则遍历序列元素
-// 修改后的成员函数，返回查找结果
-Parameter::FindResult Parameter::FindAndPrintByKey(const std::string& targetKey) {
-	FindResult result;
-	if (configs.find(currentYamlFilename) != configs.end()) {
-		YAML::Node root = configs[currentYamlFilename];
-		FindByKey(root, targetKey, "", result);
+/**
+@brief 从根节点开始查找键名对应的所有的路径，存储至容器paths中
+@params 参数1 keyToFind: 要查找的键名，参数2 paths: 用于存储所有路径的容器
+@return 如果键名的确存在，返回true
+@note 一般使用这个搜索键名 
+*/
+bool Parameter::findAllPathsByKeyInRoot(const std::string& keyToFind, std::vector<std::string>& paths) const {
+    return findAllPathsByKey(root, keyToFind, paths);
+}
+
+
+/**
+@brief 打印键名对应的所有路径
+@param 要查询的键名 
+*/
+void Parameter::printAllPathsByKey(const std::string& keyToFind) const{
+	std::vector<std::string> paths;
+	if(findAllPathByKeyInRoot(keyToFind, paths)){
+		std::cout << "Found paths for key '"<< keyToFind << "':" << std::endl;
+		for (const auto& path : path){
+			std::cout << "- " path << std::endl;
+		}
+	} else {
+		std::cout << "Key '" << keyToFind << "' not found." << std::endl;
 	}
-	return result;
 }
 
 
@@ -265,6 +388,7 @@ Parameter::FindResult Parameter::FindAndPrintByKey(const std::string& targetKey)
 // 函数，增加节点到YAML中指定的路径
 // root为文件的根节点，path为一个字符串相连，表示节点的路径，每个字符串代表路径中的一个节点名称
 // nodeName是新增加节点的名称，newNode是新增加节点的内容
+/*
 bool Parameter::AddNodeToYaml(const std::string& pathStr, const std::string& nodeName, const YAML::Node& newNode) {
 	if (configs.find(currentYamlFilename) == configs.end()) {
 		std::cerr << "YAML file not loaded." << std::endl;
@@ -277,9 +401,10 @@ bool Parameter::AddNodeToYaml(const std::string& pathStr, const std::string& nod
 
 	return AddNode(root, path, nodeName, newNode);
 }
-
+*/
 
 // 成员函数9:将当前YAML内容保存到新文件
+/*
 bool Parameter::SaveYamlToFile(const std::string& newFilename, const std::string& savePath) {
 	// 检查是否已加载YAML内容
 	if (configs.find(currentYamlFilename) == configs.end()) {
@@ -304,7 +429,7 @@ bool Parameter::SaveYamlToFile(const std::string& newFilename, const std::string
 
 	return true;
 }
-
+*/
 
 // 成员函数9: 
 // 本函数实现了修改节点的功能，主体函数为
@@ -314,6 +439,7 @@ bool Parameter::SaveYamlToFile(const std::string& newFilename, const std::string
 // 如果节点是标量的话，修改标量的内容
 // 如果节点是序列的话，修改序列的内容
 // 如果节点是映射的话，修改值的内容或修改键名
+/*
 bool Parameter::ModifyNode(const std::string& pathStr, const YAML::Node& newValue, const std::string& newKey) {
 	if (configs.find(currentYamlFilename) == configs.end()) {
 		std::cerr << "YAML file not loaded." << std::endl;
@@ -326,9 +452,10 @@ bool Parameter::ModifyNode(const std::string& pathStr, const YAML::Node& newValu
 
 	return ModifyNodeInternal(root, path, newValue, newKey);
 }
-
+*/
 
 // 成员函数10: 删除某路径下的节点，此功能不建议使用，yaml-cpp/yaml.h库删除功能并不完善
+/*
 bool Parameter::RemoveNode(const std::string& pathStr) {
 	if (configs.find(currentYamlFilename) == configs.end()) {
 		std::cerr << "YAML file not loaded." << std::endl;
@@ -373,7 +500,7 @@ bool Parameter::RemoveNode(const std::string& pathStr) {
 	std::cerr << "Error: The target node for removal is not found or the path is incorrect." << std::endl;
 	return false;
 }
-
+*/
 
 // 获取当前操作的YAML文件内容
 YAML::Node Parameter::GetYamlContent() const {
@@ -408,6 +535,7 @@ void Parameter::loadYamlFile(const std::string& yamlFilePath) {
 }
 
 // 函数FindNodeByPath,通过字符串路径找到节点（而非索引路径）
+/*
 YAML::Node Parameter::FindNodeByPath(const YAML::Node& root, const std::vector<std::string>& path) {
 	YAML::Node current = root;
 	for (const auto& key : path) {
@@ -419,96 +547,10 @@ YAML::Node Parameter::FindNodeByPath(const YAML::Node& root, const std::vector<s
 	}
 	return current;
 }
-
-// 提取节点信息
-Parameter::NodeInfo Parameter::ExtractNodeInfo(const YAML::Node& node) {
-	NodeInfo info;
-	info.nodeType = NodeTypeToString(node.Type());
-
-	// 假设父节点信息在此上下文中不可获取，初始化为nullopt
-	info.parentNode = boost:none;
-
-	// 提取子节点信息
-	if (node.IsMap()) {
-		for (const auto& iter : node) {
-			info.childNodes.push_back(iter.first.as<std::string>());
-		}
-	} else if (node.IsSequence()) {
-		for (std::size_t i = 0; i < node.size(); ++i) {
-			info.childNodes.push_back("Sequence item " + std::to_string(i));
-		}
-	}
-	return info;
-}
-
-// 节点类型转字符串
-std::string Parameter::NodeTypeToString(YAML::NodeType::value type) {
-	switch (type) {
-		case YAML::NodeType::Null: return "Null";
-		case YAML::NodeType::Scalar: return "Scalar";
-		case YAML::NodeType::Sequence: return "Sequence";
-		case YAML::NodeType::Map: return "Map";
-		default: return "Unknown";
-	}
-}
-
-// FindNodePath实现递归查找
-bool Parameter::FindNodePath(const YAML::Node& node, const YAML::Node& target, std::vector<std::string>& path) {
-	if (node.Type() == YAML::NodeType::Scalar && node.Scalar() == target.Scalar()) {
-		return true; // 找到匹配的标量节点
-	} else if (node.Type() == YAML::NodeType::Sequence) {
-		for (size_t i = 0; i < node.size(); ++i) {
-			path.push_back("[" + std::to_string(i) + "]");
-			if (FindNodePath(node[i], target, path)) {
-				return true; // 找到匹配的节点
-			}
-			path.pop_back(); // 回溯
-		}
-	} else if (node.Type() == YAML::NodeType::Map) {
-		for (const auto& iter : node) {
-			path.push_back(iter.first.Scalar());
-			if (FindNodePath(iter.second, target, path)) {
-				return true; // 找到匹配的节点
-			}
-			path.pop_back(); // 回溯
-		}
-	}
-	return false; // 未找到匹配的节点
-}
-
-// 辅助递归函数，用于查找键
-bool Parameter::FindByKey(const YAML::Node& node, const std::string& targetKey, const std::string& path, FindResult& result) {
-	if (node.IsMap()) {
-		for (const auto& element : node) {
-			std::string newKey = element.first.as<std::string>();
-			std::string newPath = path.empty() ? newKey : path + "." + newKey;
-			if (newKey == targetKey) {
-				result.path = newPath; // 存储找到的路径
-				if (element.second.IsSequence()) {
-					for (const auto& item : element.second) {
-						result.values.push_back(item.Scalar());
-					}
-				} else {
-					result.values.push_back(element.second.Scalar()); // 存储值
-				}
-				return true;
-			}
-			if (FindByKey(element.second, targetKey, newPath, result)) {
-				return true;
-			}
-		}
-	} else if (node.IsSequence()) {
-		for (size_t i = 0; i < node.size(); ++i) {
-			std::string newPath = path + "[" + std::to_string(i) + "]";
-			if (FindByKey(node[i], targetKey, newPath, result)) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
+*/
 
 // 此函数是为了实现增加功能
+/*
 bool Parameter::AddNode(YAML::Node& root, const std::vector<std::string>& path, const std::string& nodeName, const YAML::Node& newNode) {
 	YAML::Node current = root;
 	for (size_t i = 0; i < path.size(); ++i) {
@@ -539,16 +581,6 @@ bool Parameter::AddNode(YAML::Node& root, const std::vector<std::string>& path, 
 	return false; // 如果由于某种原因未能添加节点，则返回false
 }
 
-// 此函数是用于分离路径字符串，比如"Person.age"分离为["Person", "age"]
-std::vector<std::string> Parameter::SplitPath(const std::string& pathStr) {
-	std::vector<std::string> path;
-	std::stringstream ss(pathStr);
-	std::string item;
-	while (getline(ss, item, '.')) { // 假设路径中的节点由'.'分隔
-		path.push_back(item);
-	}
-	return path;
-}
 
 // 实际执行修改操作的内部函数
 bool Parameter::ModifyNodeInternal(YAML::Node& current, const std::vector<std::string>& path, const YAML::Node& newValue, const std::string& newKey) {
@@ -583,5 +615,5 @@ bool Parameter::ModifyNodeInternal(YAML::Node& current, const std::vector<std::s
 	}
 	return false;
 }
-	
+*/	
 

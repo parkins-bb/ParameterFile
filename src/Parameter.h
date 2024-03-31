@@ -5,10 +5,8 @@
 #include <iostream>
 #include <filesystem>
 #include <vector>
-// #include <fstream>  C++17特性
 #include <unordered_map>
 #include <sstream>
-// #include <optional> C++17特性
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include "yaml-cpp/yaml.h"
@@ -17,16 +15,34 @@ namespace fs = boost::filesystem;
 
 class Parameter {
 public:
+
 	// 构造函数:加载一个yaml文件，接受一个yaml文件名作为参数，文件路径默认为../data
     Parameter(const std::string& yamlFilename);
 
-	// 成员函数1： 函数用于获取指定文件夹下指定后缀的所有文件名, 接受文件路径和扩展名作为参数
+
+	// 成员函数1
+	/**
+	@brief 获取指定文件夹下指定后缀的所有文件名
+	@param 参数1 folderPath: 文件路径; 参数2 extension: 文件扩展名
+	@return 文件名组成的数组
+	*/
     std::vector<std::string> getFilesWithExtension(const std::string& folderPath, const std::string& extension);
 
-	// 成员函数2：函数用于获取yaml后缀的文件，并输出成字符串数组形式
+
+	// 成员函数2
+	/**
+	@brief 获取指定文件夹下所有YAML文件的文件名
+	@param 参数 folderPath: 文件路径
+	@return 所有YAML文件的文件名
+	*/
     std::vector<std::string> searchYamlFiles(const std::string& folderPath);
 
+
 	// 成员函数3：将数组写入文件的函数
+	/**
+	@brief 将字符串数组写入文件中
+	@param 参数1 files: 待写入的字符串数组; 参数2 outputFileName: 文件的文件名
+	*/
     void writeToFile(const std::vector<std::string>& files, const std::string& outputFileName);
 
 	// 成员函数4：用于获取并返回yaml文件所有的节点内容
