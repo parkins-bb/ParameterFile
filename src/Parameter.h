@@ -7,6 +7,7 @@
 #include <vector>
 #include <unordered_map>
 #include <sstream>
+#include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include "yaml-cpp/yaml.h"
@@ -45,65 +46,159 @@ public:
 	*/
     void writeToFile(const std::vector<std::string>& files, const std::string& outputFileName);
 
+
 	// 成员函数4：用于获取并返回yaml文件所有的节点内容
     std::vector<std::string> getYamlNodes();
 
+
 	/** 成员函数（新增1）： 
 	 * @brief 给出路径，返回对应的节点（节点可以是标量，键值对或者序列）
-	 * @param
-	 * @return 
+	 * @param 传入节点搜索路径（用一个点分隔）；引用参数存储找到的这个值
+	 * @return 如果值为标量，返回“true”来表示成功；值不是标量或没有找到值，函数返回“false”
 	 */
-	YAML::Node getValueByPath(const std::string& path);
-
-
-
-
-
-
+	bool getValueByPath(const std::string& path, YAML::Node& outputNode) const;
 
 	
-	
-	// 结构体定义，用于返回节点信息，包括节点类型、父节点、子节点
-    struct NodeInfo {
-        std::string nodeType;
-        boost::optional<std::string> parentNode;   // 使用 boost::optional，因为可能没有父节点
-        std::vector<std::string> childNodes;
-    };
+	/** 模板成员函数(新增2)：
+	* @brief 模板成员函数用来包装上述按地址查找成员函数，可以自动判定节点值的类型
+	* @param 参数1: 路径字符串，参数2:存储值 
+	* @return 
+	*/
+	template<typename T>
+    bool fetchValueAtPath(const std::string& path, T& output) const {
+        std::istringstream pathStream(path);
+        std::string segment;
+        YAML::Node currentNode = root;
 
-	// 成员函数5: 通过路径找到节点，返回当前节点的类型，父节点、子节点
-	// 通过路径搜查的好处是防止搜索到同名节点，保证搜索的准确性，本方法不使用模糊搜索
-    NodeInfo GetNodeInfoByPath(const std::string& internalPath);
+        while (std::getline(pathStream, segment, '.')) {
+            if (!segment.empty()) {
+                size_t bracketPos = segment.find('[');
+                if (bracketPos != std::string::npos) {
+                    // Handling sequences
+                    std::string key = segment.substr(0, bracketPos);
+                    size_t endBracketPos = segment.find(']', bracketPos);
+                    int index = std::stoi(segment.substr(bracketPos + 1, endBracketPos - bracketPos - 1));
+					if (!currentNode[key] || !currentNode[key][index]) {
+                    	std::cerr << "Path not found or invalid index: " << path << std::endl;
+                    	return false;
+                	}
+                    currentNode = currentNode[key][index];
+                } else {
+                    // Handling maps
+					if (!currentNode[segment]) {
+                    	std::cerr << "Path not found: " << path << std::endl;
+                    	return false;
+                	}
+                    currentNode = currentNode[segment];
+                }
+            }
+        }
+
+        // Attempt conversion to the requested type
+		if (currentNode && currentNode.IsDefined()){
+        	try {
+            	output = currentNode.as<T>();
+            	return true;
+        	} catch (const YAML::TypedBadConversion<T>& e) {
+            	std::cerr << "Failed to convert the value at path " << path << " to the requested type: " << e.what() << std::endl;
+            	return false;
+        	} catch (const YAML::BadConversion& e) {
+            	std::cerr << "General conversion error for the value at path " << path << ": " << e.what() << std::endl;
+            	return false;
+        	}
+		} else {
+			std::cerr << "Node not found or undefined at path: " << path << std::endl;
+        	return false;
+		}
+    }
+
+
+	/** 成员函数（新增3）：
+	@brief 传入节点的路径，查找对应节点下一级的所有子节点，子节点可以是标量，映射和序列
+	@param 参数1: 节点的路径，用'.'和[]表示，参数2:引用参数，存储所有找到的子节点
+	@return 如果有子节点，则返回为true; 如果无子节点或路径无效，返回为false 
+	*/
+	bool getChildrenByPath(const std::string& path, std::vector<std::string>& children) const;
+
 
 	/**
-	 * @brief : 通过路径
-	 * @param : 
-	 * @return : 
-	 */
-
-	// 成员函数6：给定目标值，返回该值在YAML结构中的路径
-    std::vector<std::string> GetNodePathByValue(const std::string& targetValue);
-
-	// 结构体定义，用于存储查找结果
-	struct FindResult {
-	    std::string path;  // 节点的路径
-	    std::vector<std::string> values;  // 节点的值，考虑到值可能是一个序列
-	};
-
-	// 成员函数7: 此函数为了实现功能：给出一个yaml节点的键名，
-	// (1). 输出这个建的路径；
-	// (2). 输出这个键所对应的值，如果节点的值对应是序列的话，也全部输出
-	// 功能：返回节点值，节点路径，如果节点是序列，则遍历序列元素
-    FindResult FindAndPrintByKey(const std::string& targetKey);
+	@brief 输入节点路径，打印下一级所有子节点
+	@param 输入节点路径
+	@return 如果节点路径有效或children不为空，返回true
+	*/
+	bool printChildrenByPath(const std::string& path) const;
 
 
-	// 成员函数（新增1）: 给定节点的名称，返回其父节点
+	/**
+	@brief 给定节点路径，查询所有子节点的类型。
+	@param 参数1: 节点路径; 参数2: 容器，存储子节点类型
+	@return 如果路径存在，则返回true
+	*/
+	bool getNodeTypesAtPath(const std::string& path, std::vector<std::string>& nodeTypes) const;
+	
+	
+	/**
+	@brief 打印所有子节点类型
+	@param 参数: 节点路径
+	*/
+	void printNodeTypesAtPath(const std::string& path) const;
+	
+	void testGetNodeByPath(const std::string& path) const;
+	
+	/**
+	@brief 给定节点内容，搜索节点的路径。特点是可以从自定义的任一节点开始查找
+	@param 参数1：节点内容, 可能是标量、映射的值、序列的一个元素；参数2：引用参数，用于存储节点路径
+	@return 如果节点的值存在，返回为true
+	@note 可以设定从任一节点开始查找，这么做的好处是：1.可以提高查找效率；2. 可以提高查找准确性
+	*/
+	bool findPathByValue(const YAML::Node& node, const std::string& valueToFind, std::vector<std::string>& paths, const std::string& currentPath = "") const;
 	
 
-	// 成员函数（新增2）: 给定节点的名称，返回其子节点
+	/**
+	@brief 从根节点开始查找所有的路径，如果存在，则存储至引用参数容器path中。
+	@param 参数1：要查找的值；参数2：形式参数，容器，存储路径
+	@return 如果要查找的值存在，返回为true
+	@note 要注意本函数是用来查询: "标量、序列中的元素、键值对的值" 对应的路径，不是用来查询键名对应的路径!!!
+	*/
+	bool findPathByValueInRoot(const std::string& valueToFind, std::vector<std::string>& paths) const;	
 
-	// 成员函数（新增3）：给定节点的名称，返回节点类型
+
+	/**
+	@brief 给定节点内容，打印所有的路径。
+	@param 输入要查找的节点的内容（注意是: "标量、序列中的元素、键值对的值"）
+	*/
+	void printAllPathsByValue(const std::string& valueToFind) const;
+	
+
+	/**
+	@brief 根据键名查找这个键名对应的路径，并存储至引用参数中
+	@param 参数1 node:当前递归遍历到的节点，参数2 keyToFind:要找到的键名,
+	   	   参数3 paths:用于存储找到的路径，参数4 当前路径（用于递归过程中的累积构建）
+	@return 如果找得到，返回为true
+	@note 较少使用这个函数
+    	  注意YAML文件可能包含多个同名的键名, 所以本成员函数可以查找同名键名可能的所有路径
+	*/
+	bool findAllPathsByKey(const YAML::Node& node, const std::string& keyToFind, std::vector<std::string>& paths, const std::string& currentPath = "") const;
+	
+
+	/**
+	@brief 从根节点开始查找键名对应的所有的路径，存储至容器paths中
+	@params 参数1 keyToFind: 要查找的键名，参数2 paths: 用于存储所有路径的容器
+	@return 如果键名的确存在，返回true
+	@note 一般使用这个搜索键名 
+	*/
+	bool findAllPathsByKeyInRoot(const std::string& keyToFind, std::vector<std::string>& paths) const;
 
 
+	/**
+	@brief 打印键名对应的所有路径
+	@param 要查询的键名 
+	*/
+	void printAllPathsByKey(const std::string& keyToFind) const;
+
+
+
+	/*
 	// 成员函数8:
 	// 本函数为了实现如下功能：给出节点的具体路径，增加这个路径下的节点, 需要调用成员函数9保存至新文件
 	// 本函数要求输入yaml文件路径，指定要加入节点的路径，新增节点的名称，以及新增节点的内容
@@ -127,9 +222,10 @@ public:
 
 	// 成员函数11: 删除某路径下的节点，需要调用成员函数9保存至新文件
     bool RemoveNode(const std::string& pathStr);
-
+	*/
 	// 获取当前操作的YAML文件内容
     YAML::Node GetYamlContent() const;
+	
 
 	// 析构函数，输出对象删除信息
     ~Parameter();
@@ -138,30 +234,26 @@ private:
 	// loadYamlFile函数, 加载特定路径的yaml文件
     void loadYamlFile(const std::string& yamlFilePath);
 
-	// 函数FindNodeByPath,通过字符串路径找到节点（而非索引路径）
-    YAML::Node FindNodeByPath(const YAML::Node& root, const std::vector<std::string>& path);
+	/**
+	@brief 私有成员函数，根据路径查找子节点
+	*/
+	bool getNodeByPathSegments(const YAML::Node& node, const std::vector<std::string>& segments, size_t index, YAML::Node& outputNode) const;
+	
+	/**
+	@brief 私有成员函数，用于查找子节点
+	*/
+	const YAML::Node getNodeByPath(const std::string& path) const;
 
-	// 提取节点信息
-    NodeInfo ExtractNodeInfo(const YAML::Node& node);
-
-	// 将节点类型转为字符串
-    std::string NodeTypeToString(YAML::NodeType::value type);
-
-	// FindNodePath实现递归查找
-    bool FindNodePath(const YAML::Node& node, const YAML::Node& target, std::vector<std::string>& path);
-
-	// 辅助递归函数，用于查找键
-    bool FindByKey(const YAML::Node& node, const std::string& targetKey, const std::string& path, FindResult& result);
-
+	/*
 	// 实现增加功能
     bool AddNode(YAML::Node& root, const std::vector<std::string>& path, const std::string& nodeName, const YAML::Node& newNode);
 
 	// 此函数是用于分离路径字符串，比如"Person.age"分离为["Person", "age"]
     std::vector<std::string> SplitPath(const std::string& pathStr);
-
+	*/
 	// 实际执行修改操作的内部函数
     bool ModifyNodeInternal(YAML::Node& current, const std::vector<std::string>& path, const YAML::Node& newValue, const std::string& newKey);
-
+	
 	// 成员变量1
     std::vector<std::string> files;
 	// 成员变量2 文件名和YAML内容的映射
@@ -170,7 +262,7 @@ private:
     std::string currentYamlFilename;
 	// 成员变量4 文件的根节点
 	YAML::Node root;
-
+	
 };
 
 #endif // PARAMETER_H

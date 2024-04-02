@@ -1,0 +1,22 @@
+# 示例YAML文件
+person:
+  name: John Doe
+  age: 34
+  married: ture
+  hobbies:
+    - Hiking
+    - Photography
+  address: 
+    street: "1234 Elm Street"
+    city: "Somewhere"
+    zip: 123456
+
+# 多行字符串
+description: |
+  This is a long description
+  that spans multiple lines.
+
+# 使用锚点和别名
+baseColor: &baseColor "#00FF00"
+backgroundColor: *baseColor
+

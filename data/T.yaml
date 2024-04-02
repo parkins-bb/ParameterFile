@@ -1,0 +1,40 @@
+company:
+  name: "TechPioneers Inc."
+  departments:
+    - name: "Engineering"
+      head: "John Doe"
+      projects:
+        - id: 1
+          title: "AI Development"
+          active: true
+          languages:
+            - "Python"
+            - "C++"
+          team:
+            lead: "Jane Smith"
+            members:
+              - name: "Alice Jones"
+                role: "Software Engineer"
+              - name: "Bob Brown"
+                role: "Research Scientist"
+        - id: 2
+          title: "Infrastructure"
+          active: false
+          team:
+            lead: "Martin Tailor"
+            members:
+              - name: "Chris Green"
+                role: "DevOps Engineer"
+    - name: "Human Resources"
+      head: "Emily White"
+      policies:
+        - id: "PTO-001"
+          description: "Paid Time Off Policy"
+        - id: "WFH-002"
+          description: "Work From Home Policy"
+  locations:
+    - address: "123 Tech Ave, Tech City"
+      capacity: 500
+    - address: "456 Innovation Pkwy, Develop Town"
+      capacity: 250
+

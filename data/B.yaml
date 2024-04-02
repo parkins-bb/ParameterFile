@@ -1,0 +1,17 @@
+movies:
+  - title: "Inception"
+    year: 2010
+    rating: 8.8
+    genres: ["Action", "Adventure", "Sci-Fi"]
+    director: 
+      name: "Christopher Nolan"
+      birthYear: 1970
+    availableOnStreaming: true
+  - title: "Interstellar"
+    year: 2014
+    rating: 8.6
+    genres: ["Adventure", "Drama", "Sci-Fi"]
+    director: 
+      name: "Christopher Nolan"
+      birthYear: 1970
+    availbaleOnStreaming: false
