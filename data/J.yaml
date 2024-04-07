@@ -1,0 +1,21 @@
+settings:
+  theme: "dark"
+  notifications:
+    email: true
+    sms: false
+
+users:
+  - name: "John Doe"
+    age: 30
+    email: "johndoe@example.com"
+  - name: "Jane Doe"
+    age: 25
+    email: "janedoe@example.com"
+
+database:
+  host: "localhost"
+  port: 5432
+  credentials:
+    username: "admin"
+    password: "secret"
+

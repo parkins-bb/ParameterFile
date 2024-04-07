@@ -1,0 +1,17 @@
+Person:
+  name: John Doe
+  age: 30
+  contacts:
+    - type: email
+      value: john.doe@example.com
+    - type: phone
+      value: "1234567890"
+Company:
+  name: ExampleCorp
+  employees: 100
+  departments:
+    - name: Development
+      location: Floor 3
+    - name: Marketing
+      location: Floor 2
+

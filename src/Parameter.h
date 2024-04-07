@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <fstream>
+#include <regex>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include "yaml-cpp/yaml.h"
@@ -20,6 +21,16 @@ public:
 	// 构造函数:加载一个yaml文件，接受一个yaml文件名作为参数，文件路径默认为../data
     Parameter(const std::string& yamlFilename);
 
+	
+	// 打印root节点
+	void printRoot() const {
+		std::cout << root << std::endl;
+	}
+
+	// 获取YAML文件的根节点
+    const YAML::Node& getRoot() const {
+        return root;
+    }
 
 	// 成员函数1
 	/**
@@ -68,7 +79,7 @@ public:
     bool fetchValueAtPath(const std::string& path, T& output) const {
         std::istringstream pathStream(path);
         std::string segment;
-        YAML::Node currentNode = root;
+        YAML::Node currentNode = YAML::Clone(root);
 
         while (std::getline(pathStream, segment, '.')) {
             if (!segment.empty()) {
@@ -118,7 +129,7 @@ public:
 	@param 参数1: 节点的路径，用'.'和[]表示，参数2:引用参数，存储所有找到的子节点
 	@return 如果有子节点，则返回为true; 如果无子节点或路径无效，返回为false 
 	*/
-	bool getChildrenByPath(const std::string& path, std::vector<std::string>& children) const;
+	bool getChildNodes(const std::string& path, std::vector<std::string>& childNodes) const;
 
 
 	/**
@@ -142,7 +153,7 @@ public:
 	@param 参数: 节点路径
 	*/
 	void printNodeTypesAtPath(const std::string& path) const;
-	
+	void printRootInfo() const;	
 	void testGetNodeByPath(const std::string& path) const;
 	
 	/**
@@ -197,6 +208,28 @@ public:
 	void printAllPathsByKey(const std::string& keyToFind) const;
 
 
+	/**
+	@brief
+	@param
+	@return
+	*/
+	bool addorUpdateNode(const std::string& path, const YAML::Node& value, const std::string& key);
+
+	
+	/**
+	@brief 函数重载，当接收两个参数时执行修改内容命令
+	@param
+	@return
+	*/
+	bool addorUpdateNode(const std::string& path, const YAML::Node& value);
+
+
+	/**
+	@brief
+	@param
+	*/
+	void saveYamlToFile(const std::string& filePath) const;	
+
 
 	/*
 	// 成员函数8:
@@ -226,6 +259,10 @@ public:
 	// 获取当前操作的YAML文件内容
     YAML::Node GetYamlContent() const;
 	
+	/**
+	@brief 私有成员函数，用于查找子节点
+	*/
+    YAML::Node getNodeByPath(const YAML::Node& startNode, const std::string& path) const;
 
 	// 析构函数，输出对象删除信息
     ~Parameter();
@@ -242,8 +279,9 @@ private:
 	/**
 	@brief 私有成员函数，用于查找子节点
 	*/
-	const YAML::Node getNodeByPath(const std::string& path) const;
-
+	/*
+    YAML::Node getNodeByPath(const YAML::Node& startNode, const std::string& path) const;
+	*/
 	/*
 	// 实现增加功能
     bool AddNode(YAML::Node& root, const std::vector<std::string>& path, const std::string& nodeName, const YAML::Node& newNode);
@@ -262,7 +300,6 @@ private:
     std::string currentYamlFilename;
 	// 成员变量4 文件的根节点
 	YAML::Node root;
-	
 };
 
 #endif // PARAMETER_H

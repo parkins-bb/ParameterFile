@@ -1,0 +1,16 @@
+school:
+  name: "Central High"
+  location: "Central City"
+  students:
+    - name: "John Doe"
+      age: 15
+      grade: 9
+    - name: "Jane Doe"
+      age: 14
+      grade: 9
+  departments:
+    science:
+      head: "Dr. Smith"
+    literature:
+      head: "Dr. Jones"
+

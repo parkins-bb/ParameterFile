@@ -1,0 +1,8 @@
+university:
+  name: "Tech University"
+  departments:
+    - name: "Computer Science"
+      courses:
+        - id: 101
+          name: "Introduction to Programming"
+

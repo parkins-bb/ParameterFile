@@ -1,0 +1,33 @@
+university:
+  name: "Tech University"
+  departments:
+    - name: "Computer Science"
+      courses:
+        - id: 101
+          name: "Introduction to Programming"
+          students:
+            - name: "Jane Smith"
+              id: "JS101"
+            - name: "Emily Davis"
+              id: "ED202"
+        - id: 102
+          name: "Data Structures"
+          students:
+            - name: "John Doe"
+              id: "JD303"
+    - name: "Mathematics"
+      courses:
+        - id: 201
+          name: "Calculus I"
+          students:
+            - name: "Brian Clark"
+              id: "BC404"
+  library:
+    books:
+      - title: "The Art of Computer Programming"
+        author: "Donald E. Knuth"
+        available: true
+      - title: "Introduction to Algorithms"
+        author: "Thomas H. Cormen"
+        available: false
+
