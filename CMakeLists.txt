@@ -42,7 +42,7 @@ target_link_libraries(parameter_lib yaml-cpp ${Boost_LIBRARIES})
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # 添加example可执行文件
-add_executable(example_bin example/example_2.cpp)
+add_executable(example_bin example/example_1.cpp)
 
 # 链接Parameter库到example_bin可执行文件
 target_link_libraries(example_bin parameter_lib)

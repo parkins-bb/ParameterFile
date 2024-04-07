@@ -32,8 +32,6 @@ int main() {
 	YAML::Node newUser = YAML::Load("{\"name\": \"Alex Smith\", \"age\": 28, \"email\": \"alexsmith@gmail.com\"}");
 	paramJ.addorUpdateNode("users[2]", newUser);
 
-	paramJ.printRoot();
-
 	// 保存更改到新的YAML文件
 	paramJ.saveYamlToFile("new_J.yaml"); 
 

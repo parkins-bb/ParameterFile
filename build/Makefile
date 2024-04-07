@@ -142,29 +142,29 @@ example_bin/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/example_bin.dir/build.make CMakeFiles/example_bin.dir/build
 .PHONY : example_bin/fast
 
-example/example_2.o: example/example_2.cpp.o
-.PHONY : example/example_2.o
+example/example_1.o: example/example_1.cpp.o
+.PHONY : example/example_1.o
 
 # target to build an object file
-example/example_2.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/example_bin.dir/build.make CMakeFiles/example_bin.dir/example/example_2.cpp.o
-.PHONY : example/example_2.cpp.o
+example/example_1.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/example_bin.dir/build.make CMakeFiles/example_bin.dir/example/example_1.cpp.o
+.PHONY : example/example_1.cpp.o
 
-example/example_2.i: example/example_2.cpp.i
-.PHONY : example/example_2.i
+example/example_1.i: example/example_1.cpp.i
+.PHONY : example/example_1.i
 
 # target to preprocess a source file
-example/example_2.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/example_bin.dir/build.make CMakeFiles/example_bin.dir/example/example_2.cpp.i
-.PHONY : example/example_2.cpp.i
+example/example_1.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/example_bin.dir/build.make CMakeFiles/example_bin.dir/example/example_1.cpp.i
+.PHONY : example/example_1.cpp.i
 
-example/example_2.s: example/example_2.cpp.s
-.PHONY : example/example_2.s
+example/example_1.s: example/example_1.cpp.s
+.PHONY : example/example_1.s
 
 # target to generate assembly for a file
-example/example_2.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/example_bin.dir/build.make CMakeFiles/example_bin.dir/example/example_2.cpp.s
-.PHONY : example/example_2.cpp.s
+example/example_1.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/example_bin.dir/build.make CMakeFiles/example_bin.dir/example/example_1.cpp.s
+.PHONY : example/example_1.cpp.s
 
 src/Parameter.o: src/Parameter.cpp.o
 .PHONY : src/Parameter.o
@@ -200,9 +200,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... example_bin"
 	@echo "... parameter_lib"
-	@echo "... example/example_2.o"
-	@echo "... example/example_2.i"
-	@echo "... example/example_2.s"
+	@echo "... example/example_1.o"
+	@echo "... example/example_1.i"
+	@echo "... example/example_1.s"
 	@echo "... src/Parameter.o"
 	@echo "... src/Parameter.i"
 	@echo "... src/Parameter.s"
