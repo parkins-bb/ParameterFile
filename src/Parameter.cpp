@@ -480,6 +480,7 @@ void Parameter::testGetNodeByPath(const std::string& path) const {
 @return 如果节点的值存在，返回为true
 @note 可以设定从任一节点开始查找，这么做的好处是：1.可以提高查找效率；2. 可以提高查找准确性
 */
+/*
 bool Parameter::findPathByValue(const YAML::Node& node, const std::string& valueToFind, std::vector<std::string>& paths, const std::string& currentPath) const {
 	bool found = false;  // 标记是否找到至少一个匹配的值
 	if (!node.IsDefined()) {
@@ -507,7 +508,7 @@ bool Parameter::findPathByValue(const YAML::Node& node, const std::string& value
 	
 	return found;
 }
-
+*/
 
 /**
 @brief 从根节点开始查找所有的路径，如果存在，则存储至引用参数容器path中。
@@ -515,15 +516,17 @@ bool Parameter::findPathByValue(const YAML::Node& node, const std::string& value
 @return 如果要查找的值存在，返回为true
 @note 要注意本函数是用来查询: "标量、序列中的元素、键值对的值" 对应的路径，不是用来查询键名对应的路径!!!
 */
+/*
 bool Parameter::findPathByValueInRoot(const std::string& valueToFind, std::vector<std::string>& paths) const{
 	return findPathByValue(root, valueToFind, paths, "");
 }
-
+*/
 
 /**
 @brief 给定节点内容，打印所有的路径。
 @param 输入要查找的节点的内容（注意是: "标量、序列中的元素、键值对的值"）
 */
+/*
 void Parameter::printAllPathsByValue(const std::string& valueToFind) const {
 	std::vector<std::string> paths;
 	if (findPathByValueInRoot(valueToFind, paths)) {
@@ -535,7 +538,7 @@ void Parameter::printAllPathsByValue(const std::string& valueToFind) const {
 		std::cout << "Value '" << valueToFind << "' not found." << std::endl;
 	}
 }
-
+*/
 
 /**
 @brief 根据键名查找这个键名对应的路径，并存储至引用参数中

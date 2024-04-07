@@ -162,7 +162,41 @@ public:
 	@return 如果节点的值存在，返回为true
 	@note 可以设定从任一节点开始查找，这么做的好处是：1.可以提高查找效率；2. 可以提高查找准确性
 	*/
-	bool findPathByValue(const YAML::Node& node, const std::string& valueToFind, std::vector<std::string>& paths, const std::string& currentPath = "") const;
+	template<typename T>
+	bool findPathByValue(const YAML::Node& node, const T& valueToFind, std::vector<std::string>& paths, const std::string& currentPath = "") const {
+	bool found = false;
+    if (!node.IsDefined()) {
+        return found;
+    }
+    
+    if (node.IsScalar()) {
+        // 尝试将节点值转换为T类型，然后与valueToFind进行比较
+        try {
+            T value = node.as<T>();
+            if (value == valueToFind) {
+                paths.push_back(currentPath);
+                found = true;
+            }
+        } catch (const YAML::BadConversion& e) {
+            // 如果转换失败，忽略这个节点
+        }
+    } else if (node.IsSequence()) {
+        for (size_t i = 0; i < node.size(); i++) {
+            std::string newPath = currentPath.empty() ? ("[" + std::to_string(i) + "]") : (currentPath + "[" + std::to_string(i) + "]");
+            if (findPathByValue(node[i], valueToFind, paths, newPath)) {
+                found = true;
+            }
+        }
+    } else if (node.IsMap()) {
+        for (auto it = node.begin(); it != node.end(); it++) {
+            std::string newPath = currentPath.empty() ? it->first.as<std::string>() : (currentPath + "." + it->first.as<std::string>());
+            if (findPathByValue(it->second, valueToFind, paths, newPath)) {
+                found = true;
+            }
+        }
+    }
+    return found;
+	}
 	
 
 	/**
@@ -171,14 +205,28 @@ public:
 	@return 如果要查找的值存在，返回为true
 	@note 要注意本函数是用来查询: "标量、序列中的元素、键值对的值" 对应的路径，不是用来查询键名对应的路径!!!
 	*/
-	bool findPathByValueInRoot(const std::string& valueToFind, std::vector<std::string>& paths) const;	
+	template<typename T>
+	bool findPathByValueInRoot(const T& valueToFind, std::vector<std::string>& paths) const {
+		return findPathByValue(root, valueToFind, paths, "");
+	}
 
 
 	/**
 	@brief 给定节点内容，打印所有的路径。
 	@param 输入要查找的节点的内容（注意是: "标量、序列中的元素、键值对的值"）
 	*/
-	void printAllPathsByValue(const std::string& valueToFind) const;
+	template<typename T>
+	void printAllPathsByValue(const T& valueToFind) const {
+		std::vector<std::string> paths;
+        if (findPathByValueInRoot(valueToFind, paths)) {
+            std::cout << "Found paths for value '" << valueToFind << "':" << std::endl;
+            for (const auto& path : paths) {
+                std::cout << "- " << path << std::endl;
+            }
+        } else {
+            std::cout << "Value '" << valueToFind << "' not found." << std::endl;
+        }
+	}
 	
 
 	/**
